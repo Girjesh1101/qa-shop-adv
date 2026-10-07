@@ -13,5 +13,9 @@
     "@types/node": "^26.6.4",
     "ts-node": "^10.9.2",
     "typescript": "^7.0.2"
+  },
+  "dependencies": {
+    "dotenv": "^18.0.5",
+    "env": "^0.0.2"
   }
 }
