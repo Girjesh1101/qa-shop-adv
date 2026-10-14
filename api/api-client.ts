@@ -12,13 +12,20 @@ export interface ApiRequestOptions {
 
 export class ApiClient {
 
-    constructor(private readonly context : APIRequestContext){}
+    constructor(
+        private readonly context: APIRequestContext,
+        private readonly baseURL: string,
+    ) {}
+
+    private resolveUrl(path: string): string {
+        return new URL(path.replace(/^\/+/, ""), `${this.baseURL.replace(/\/+$/, "")}/`).toString();
+    }
 
     async get<T>(
         path: string,
         options? : ApiRequestOptions): Promise<ApiResult<T>>{
             try {
-                const response = await this.context.get(path,{
+                const response = await this.context.get(this.resolveUrl(path),{
                     params: options?.params,
                     headers: options?.headers
                 });
@@ -38,7 +45,7 @@ export class ApiClient {
 
             try {
                 
-                const response = await this.context.post(path,
+                const response = await this.context.post(this.resolveUrl(path),
                     {
                         data: body,
                         headers
@@ -47,15 +54,30 @@ export class ApiClient {
             } catch (error) {
                 throw this.toRequestError('POST', path, error);
             }
-        }  
+        }
         
+    async fetch<T>(
+        path: string,
+        body?: unknown,
+        headers?: Record<string, string>
+    ): Promise<ApiResult<T>>{
+        try {
+            const response = await this.context.patch(this.resolveUrl(path), {
+                data: body,
+                headers
+            });
+            return {response , data : await this.parseBody<T>(response)};
+        } catch (error: unknown) {
+            throw this.toRequestError('PATCH', path, error);
+        }
+    }
         
     async delete<T = unknown>(
         path: string,
         headers?: Record<string, string>,
     ): Promise<ApiResult<T>> {
         try {
-        const response = await this.context.delete(path, { headers });
+        const response = await this.context.delete(this.resolveUrl(path), { headers });
         return { response, data: await this.parseBody<T>(response) };
         } catch (error: unknown) {
         throw this.toRequestError("DELETE", path, error);
